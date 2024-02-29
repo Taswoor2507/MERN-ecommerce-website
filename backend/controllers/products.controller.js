@@ -2,6 +2,7 @@
 import Product from "../models/product.model.js";
 import ErrorHandler from "../utils/errorHandler.js";
 import asyncHandler from "../middleware/asyncErrorHandler.js";
+import ApiFeature from "../utils/apiFeatures.js";
 // @des create a new product
 // @route localhost/api/v1/products/new
 // @access public
@@ -18,7 +19,13 @@ const createProduct = asyncHandler(async (req, res, next) => {
 // @route localhost/api/v1/prdoucts
 // @access public
 const getAllProducts = asyncHandler(async (req, res, next) => {
-  const product = await Product.find();
+  // api features
+  let resultPerPage = 5;
+  const apiFeatures = new ApiFeature(Product.find(), req.query)
+    .search()
+    .filter()
+    .pagination(resultPerPage);
+  const product = await apiFeatures.query;
   res.status(200).json(product);
   next();
 });
@@ -27,6 +34,8 @@ const getAllProducts = asyncHandler(async (req, res, next) => {
 // @route localhost/api/v1/products/:id
 // @access public
 const getProductDetail = asyncHandler(async (req, res, next) => {
+  const totalProducts = await Product.countDocuments();
+
   let product = await Product.findById(req.params.id);
   if (!product) {
     return next(new ErrorHandler(400, "Product not found"));
@@ -36,6 +45,7 @@ const getProductDetail = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     product,
+    totalProducts,
   });
   next();
 });
